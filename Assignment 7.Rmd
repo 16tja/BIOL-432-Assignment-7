@@ -13,3 +13,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```
 
+```{r}
+
+```
+
+```{r}
+Red Dragon: https://monster.fandom.com/wiki/Dragon
+Blue Dragon: https://www.dndbeyond.com/monsters/adult-blue-dragon
+Green Dragon: https://www.deviantart.com/sandara/art/Green-Dragon-v2-579637253
+```
+
