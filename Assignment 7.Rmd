@@ -9,17 +9,81 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+#### To begin, we'll load the libraries we will need to complete this assignment.
 
+```{r, warning = F}
+library(ape)
+library(reshape2)
+library(ggplot2)
+library(tidyr)
+library(ggtree)
 ```
 
-```{r}
-
-```
+#### Next, we'll import our data file and ensure each binary input is treated as its own character, and in its own columm.
 
 ```{r}
-Red Dragon: https://monster.fandom.com/wiki/Dragon
-Blue Dragon: https://www.dndbeyond.com/monsters/adult-blue-dragon
-Green Dragon: https://www.deviantart.com/sandara/art/Green-Dragon-v2-579637253
+DragonMatrix <- read.table("Input/DragonMatrix.txt")
+DragonMatrix[78:80, 2] <- c("100111110100100000000000101110101000001000000000011100100000111100000010011100", "100111110111000101000000011110111000001000000000011000100000111000000010011100", "100111110100110110000000101111110001000001000001001100100000111000010001011001")
+DragonMatrix$V2 <- strsplit(DragonMatrix$V2, "")
+DragonMatrix$V2 <- gsub("[\"c()]", "", DragonMatrix$V2)
+DragonMatrix <- DragonMatrix %>% separate(V2, into = paste('V', 2:79, sep = ''), sep = ',')
 ```
 
+#### Now we will apply our weights in the same fashion as done during the tutorial.
+
+```{r}
+WeightsDat<-read.csv("Weights.csv")
+Weights<-paste0(WeightsDat$Weight,collapse="")
+Weights<-strsplit(Weights,split="")[[1]]
+WeightsNum<-rep(NA,length(Weights))
+for(i in 1:length(WeightsNum)){
+  if(Weights[i] %in% LETTERS){
+    WeightsNum[i]<-which(LETTERS==Weights[i])+9
+  } else {
+    WeightsNum[i]<-Weights[i]
+  }
+}
+WeightsNum<-as.numeric(WeightsNum)
+```
+
+#### We will plot a matrix to confirm that our data looks and behaves as we want it to.
+
+```{r}
+WtDragonMatrix<-DragonMatrix 
+for (i in 1:length(DragonMatrix)){
+  RepWeight<-DragonMatrix[[i]]==1
+  WtDragonMatrix[[i]][RepWeight]<-WeightsNum[RepWeight]
+  RepWeight<-NA
+}
+
+WtDragonDist<-dist(WtDragonMatrix,method='binary')
+WtDragonDistMat<-as.matrix(WtDragonDist)
+WtPDat<-melt(WtDragonDistMat)
+
+ggplot(data = WtPDat, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()+scale_fill_gradientn(colours=c("white","blue","green","red")) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+#### This matrix allows us to visualize our data and confirm we have made the necessary adjustments needed.
+
+![](Images\Red Dragon.jpg)
+The Red Dragon was sourced from [this link](https://monster.fandom.com/wiki/Dragon)
+
+![](Images\Blue Dragon.jpeg)
+The Blue Dragon was sourced from [this link](https://www.dndbeyond.com/monsters/adult-blue-dragon)
+
+![](Images/Green Dragon.jpg)
+The Green Dragon was sourced from [this link](https://www.deviantart.com/sandara/art/Green-Dragon-v2-579637253)
+
+```{r}
+WtDragonTree<-fastme.bal(WtDragonDist)
+WtDragonTree$tip.label <- DragonMatrix$V1
+WtDragonTree <- groupClade(WtDragonTree, .node = 157)
+
+ggtree(WtDragonTree, layout = 'rectangular', aes(colour = group))+
+  geom_tiplab(size = 2)
+```
+
+
+#### Highlighted in blue we see the lineage which led to our three dragons imported into the original dataset (group 1 in the figure). The remaining lineages are marked in red so as not to confuse evolutionary paths.
